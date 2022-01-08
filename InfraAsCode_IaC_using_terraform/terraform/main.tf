@@ -1,4 +1,4 @@
-resource "azurerm_resource_group" "test-rsg-003" {
-  name = "test-rsg-003"
+resource "azurerm_resource_group" "test-rsg-001" {
+  name = "test-rsg-001"
   location = "UK South"
 }
