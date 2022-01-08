@@ -3,7 +3,7 @@
 This repo will have resources that will cover important cloud native concepts which are part of modern cloud architecture and also the Devops softawre development resources.
 
 Here is a list of resources - 
-- Inafrastructure as Code - use of terraform for deploying the Azure resources - [DevOps pipeline] [url1].  
+- Inafrastructure as Code - use of terraform for deploying the Azure resources - [DevOps pipeline][url1].  
 
 
  
