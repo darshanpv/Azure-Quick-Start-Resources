@@ -45,15 +45,16 @@ enter all the details --> verify .. NOTE- service principal ID is client ID and 
 
 1. Go to your VS code (step-4) and create "Dev" branch.
 1. Create new folder terraform and copy all the terraform .tf files from this git repo to it. Create pipeline folder and copy the .yml file from this repo to it.
-1. Commit your changes so that the DevOps repo reflect all your changes in "Dev" branch
-1. Create a pull request and merge the dev branch to main branch.
-1. Go to Pipeline --> Environments --> New Environment. Add new environment --> Dev , Resources --> None , Click "Create". Goto right most ... (dots) and add approvals and add approver as yourself.
-1. Go to Pipelines and create a new pipeline --> Select your repo --> "Starter pipeline". This will create a azure-pipeline.yml in your root folder.
-1. Replace the default content with the one available in terraform-plan-apply.yml file (available in /pipelines folder)
-1. The pipeline has 2 stages - Stage 1 -> Build (terraform Init and Plan) , Stage-2 -> Deploy (terraform apply)
-1. Check all the parameters and you should be able to run the pipeline. You need to approval before "Deploy" stage is triggered
-1. If everything goes well, you should see the new resource group created.
-1. You can check the new .tfstate file stored in tf-state-files container.
+2. Provide your subscription id in the file providers.tf file in terraform folder.
+3. Commit your changes so that the DevOps repo reflect all your changes in "Dev" branch.
+4. Create a pull request and merge the dev branch to main branch.
+5. Go to Pipeline --> Environments --> New Environment. Add new environment --> Dev , Resources --> None , Click "Create". Goto right most ... (dots) and add approvals and add approver as yourself.
+6. Go to Pipelines and create a new pipeline --> Select your repo --> "Starter pipeline". This will create a azure-pipeline.yml in your root folder.
+7. Replace the default content with the one available in terraform-plan-apply.yml file (available in /pipelines folder)
+8. The pipeline has 2 stages - Stage 1 -> Build (terraform Init and Plan) , Stage-2 -> Deploy (terraform apply)
+9. Check all the parameters and you should be able to run the pipeline. You need to approval before "Deploy" stage is triggered
+10. If everything goes well, you should see the new resource group created.
+11. You can check the new .tfstate file stored in tf-state-files container.
 
 **Important**- If you re-run the pipeline with new resource group, it will automatically delete the old resource group and create new one as terraform maintains the old state and to-be state.
 
