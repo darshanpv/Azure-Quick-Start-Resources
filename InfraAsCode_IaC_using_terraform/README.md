@@ -1,16 +1,16 @@
 ## Dev Ops
 
-## Step by Stepbuild and deply the terrform - Infrastructure as Code (IaC)
+## Step by Step way - Build and deply the terrform - Infrastructure as Code (IaC)
 
 ### DevOps Project Creation
 
-1. Go to Azure DevOps portal (https://dev.azure.com/purushottamd/) and create the new project.
+1. Go to Azure DevOps portal (https://dev.azure.com/) and create the new project.
 1. Go to project setting --> Repos --> Repository and create the new repo or rename the default one.
-1. Add .gitignore so as to add all terraform related file extension that can reveal the azure resource details (.tfstate, secrets etc.)
-1. Go to Repos and Clone the repo to IDE VS code. This will prompt to select the local folder where you want the local copy of the code to be stored. Now, you should have the empty repo opened in VS code.
+1. Add .gitignore so as to add all terraform related file extension so that the azure resource details are not revelaed. (.tfstate, secrets etc.)
+1. Go to Repos and Clone the repo to IDE VS code. This will prompt to select the local folder in VS Code, where you want the local copy of the code to be stored. Now, you should have the empty repo opened in VS code.
 
 ### Terraform backend and Key vault creation for storing secrets
-1. Create the resource group that will be used to store the terraform state files and also the key vault that stores secrets. (e.g. terraform\_backend\_rsg)
+1. Go to Azure portal (https://portal.azure.com) and create the resource group in your subscription that will be used to store the terraform state files and also the key vault that stores secrets. (e.g. terraform\_backend\_rsg)
 1. Create storage account in the above resource group that will as terraform backend to store all the state files. (e.g. tefmstatefilessa) (IMPORTANT - Disable the public access by selecting "Allow Blob public access" --> Disabled)
 1. Create a container that will store all tfstate files (e.g. tf-state-files)
 1. Create Azure key vault that will store the access keys securely in secrets. (e.g. tf-secret-vault)
