@@ -1,0 +1,107 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - terraform/
+
+resources:
+- repo: self
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: tf-secrets-vault
+
+stages:
+- stage: build
+  displayName: 1_build
+  jobs:
+  - job: run_init
+    displayName: Terrafrom init and plan
+    steps:
+    - task: TerraformInstaller@0
+      displayName: Terraform install
+      inputs:
+        terraformVersion: 'latest'
+    
+    - task: CmdLine@2
+      displayName: Terraform init
+      inputs:
+        script: 'terraform init -backend-config="access_key=$(tefmstatefilessa-key1)"'
+        workingDirectory: 'terraform'
+    
+    - task: CmdLine@2
+      displayName: Terrform validate
+      inputs:
+        script: 'terraform validate'
+        workingDirectory: 'terraform'
+    
+    - task: CmdLine@2
+      displayName: Terraform plan
+      inputs:
+        script: 'terraform plan -input=false -out=tfplan -var="spn_client_id=$(cicd-tf-spn-client-id)" -var="spn_client_secret=$(cicd-tf-spn-secret)" -var="spn_tenant_id=$(cicd-tf-spn-tenenat-id)"'
+        workingDirectory: 'terraform'
+    
+    - task: ArchiveFiles@2
+      displayName: Archive terraform plan files
+      inputs:
+        rootFolderOrFile: 'terraform'
+        includeRootFolder: true
+        archiveType: 'tar'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-tfplan.tgz'
+        replaceExistingArchive: true
+    - task: PublishPipelineArtifact@1
+      displayName: Publish terraform plan artifact
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-tfplan.tgz'
+        artifact: '$(Build.BuildId)-tfplan'
+        publishLocation: 'pipeline'
+
+- stage: deploy
+  displayName: 2_deploy
+  dependsOn: build
+  jobs:
+  - deployment: run_deploy
+    displayName: Terraform Apply
+    environment: 'Dev'
+    variables:
+      EnvironementName: 'Development'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: Download terraform plan artifact
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: '$(Build.BuildId)-tfplan'
+              itemPattern: '**/*.tgz'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: ExtractFiles@1
+            displayName: Extract terrform plan files
+            inputs:
+              archiveFilePatterns: '$(System.ArtifactsDirectory)/$(Build.BuildId)-tfplan.tgz'
+              destinationFolder: '$(System.DefaultWorkingDirectory)/'
+              cleanDestinationFolder: false
+              overwriteExistingFiles: true
+
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: 'latest'
+              
+          - task: CmdLine@2
+            displayName: Terraform Init
+            inputs:
+              script: 'terraform init -backend-config="access_key=$(tefmstatefilessa-key1)"'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+
+          - task: CmdLine@2
+            displayName: Terraform Apply
+            inputs:
+              script: 'terraform apply -auto-approve -input=false tfplan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
