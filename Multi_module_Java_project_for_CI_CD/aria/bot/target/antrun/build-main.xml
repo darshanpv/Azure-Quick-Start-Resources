@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="maven-antrun-" default="main">
+  <target name="main">
+    <mkdir dir="/Users/purushottam_d/DevWorkspace/Java/ConversationAI/aria/bot/target/res" />
+    <copy todir="/Users/purushottam_d/DevWorkspace/Java/ConversationAI/aria/bot/target/res">
+      <fileset dir="/Users/purushottam_d/DevWorkspace/Java/ConversationAI/aria/bot/src/main/resources/res" />
+    </copy>
+  </target>
+</project>

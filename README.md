@@ -1,10 +1,12 @@
 ## Azure quick start guide 
 
-This repo will have resources that will cover important cloud native concepts which are part of modern cloud architecture and also the Devops softawre development resources.
+This repo will have resources that will cover important cloud native concepts which are part of modern cloud architecture and also the DevOps software development resources.
 
 Here is a list of resources - 
 - Infrastructure as Code - use of terraform for deploying the Azure resources - [DevOps pipeline][url1].  
-
+- Multi-module java template [project][url2] using Maven for CI/CD using DevOps
 
  
 [url1]: <https://github.com/darshanpv/Azure-Quick-Start-Resources/tree/main/InfraAsCode_IaC_using_terraform>
+
+[url2]: <https://github.com/darshanpv/Azure-Quick-Start-Resources/tree/main/Multi_module_Java_project_for_CI_CD>
