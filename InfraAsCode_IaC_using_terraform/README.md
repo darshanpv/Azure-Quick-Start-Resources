@@ -37,7 +37,7 @@
 ### Connecting Azure DevOps to Azure Resources and link to secrets
 
 1. Go to DevOps portal --> Project settings --> New service connection --> Azure Resource Manager --> Service principal (manual) -->
-enter all the details --> verify .. NOTE- service principal ID is client ID and service principal key is your secret key)
+enter all the details --> verify .. NOTE- service principal ID is client ID and service principal key is your secret value)
 1. Goto Pipelines --> Library --> Variable group --> give the name (e.g. tf-secrets-vault) and enable "link secrets from an Azure key vault" --> select your service connection (created in above step) --> Add and select all your secrets --> Save
 1. Goto "Repos" --> Branches --> select "Branch Policies" by clicking right most ... (dots) --> Enable "Require minimum number of of reviewers", enter 1,  and Enable "Limit merge types" so that you are not allowed to upload to main branch directly.
 
