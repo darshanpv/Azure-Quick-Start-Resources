@@ -1,0 +1,6 @@
+resource_group_name = "<your_name>-dev-rsg"
+location = "North Europe"
+storage_account_name = "<your_name>dev"
+division = "finance"
+environment = "dev"
+product = "demo"

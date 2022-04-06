@@ -1,0 +1,6 @@
+resource_group_name = "<your_name>-prod-rsg"
+location = "North Europe"
+storage_account_name = "<your_name>prod"
+division = "finance"
+environment = "prod"
+product = "demo"
