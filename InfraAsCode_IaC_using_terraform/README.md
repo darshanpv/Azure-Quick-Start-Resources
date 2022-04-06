@@ -1,6 +1,6 @@
 ## Dev Ops
 
-## Step by Step way - Build and deply the terrform - Infrastructure as Code (IaC)
+## Step by Step - Build and deploy the terrform - Infrastructure as Code (IaC) supporting multiple environments.
 
 ### DevOps Project Creation
 
@@ -11,7 +11,7 @@
 
 ### Terraform backend and Key vault creation for storing secrets
 1. Go to Azure portal (https://portal.azure.com) and create the resource group in your subscription that will be used to store the terraform state files and also the key vault that stores secrets. (e.g. terraform\_backend\_rsg)
-1. Create storage account in the above resource group that will as terraform backend to store all the state files. (e.g. tefmstatefilessa) (IMPORTANT - Disable the public access by selecting "Allow Blob public access" --> Disabled)
+1. Create storage account in the above resource group that will as terraform backend to store all the state files. (e.g. tfstatefilessa) (IMPORTANT - Disable the public access by selecting "Allow Blob public access" --> Disabled)
 1. Create a container that will store all tfstate files (e.g. tf-state-files)
 1. Create Azure key vault that will store the access keys securely in secrets. (e.g. tf-secret-vault)
 
@@ -24,14 +24,16 @@
 1. Now go to your main resource group ( IMP- this is not terraform\_backend\_rsg but the one where you will likely to provision new infra) --> Access control(IAM) --> Role Assignment and add your service principal as owner. With this it will gain access to all the resources within this resource group.
 
 ### Storing the access keys and App Ids to keyvault
-1. Copy the storage account access keys (key1, key2) to notepad
-1. Create the secrets in keyvault and store all the keys copied to notepad.
-`	`(e.g. 	cicd-tf-spn-client-id,
+1. Copy the subscription id in which you want to provision your new resources to notepad
+2. Copy the storage account access keys (key1, key2) to notepad
+1. Create the secrets in keyvault and store all the keys copied to notepad so far.
+`	`(e.g. 	deploy-subscription-id,
+`	    `cicd-tf-spn-client-id,
 `		`cicd-tf-spn-object-id,
 `		`cicd-tf-spn-tenenat-id,
 `		`cicd-tf-spn-secret,
-`		`tefmstatefilessa-key1 ,
-`		`tefmstatefilessa-key2)
+`		`tfstatefilessa-key1 ,
+`		`tfstatefilessa-key2)
 1. Now go to "Access policies" --> add access policy --> select "GET" and "LIST" secret permissions --> select principal to give access to service principal. (cicd-tf-spn). --> Save
 
 ### Connecting Azure DevOps to Azure Resources and link to secrets
@@ -44,14 +46,14 @@ enter all the details --> verify .. NOTE- service principal ID is client ID and 
 ### CD Pipelines for IaC creation using terraform
 
 1. Go to your VS code (step-4) and create "Dev" branch.
-1. Create new folder terraform and copy all the terraform .tf files from this git repo to it. Create pipeline folder and copy the .yml file from this repo to it.
-2. Provide your subscription id in the file providers.tf file in terraform folder.
+1. Create new folder deployment and copy all the files from this git repo to it.
+2. Provide your input details for `dev` and `prod` envirinements in dev.tfvars as well as prod.tfvars located in deploy-env folder.
 3. Commit your changes so that the DevOps repo reflect all your changes in "Dev" branch.
 4. Create a pull request and merge the dev branch to main branch.
-5. Go to Pipeline --> Environments --> New Environment. Add new environment --> Dev , Resources --> None , Click "Create". Goto right most ... (dots) and add approvals and add approver as yourself.
-6. Go to Pipelines and create a new pipeline --> Select your repo --> "Starter pipeline". This will create a azure-pipeline.yml in your root folder.
-7. Replace the default content with the one available in terraform-plan-apply.yml file (available in /pipelines folder)
-8. The pipeline has 2 stages - Stage 1 -> Build (terraform Init and Plan) , Stage-2 -> Deploy (terraform apply)
+5. Go to Pipeline --> Environments --> New Environment. Add new environment --> dev , Resources --> None , Click "Create". Goto right most ... (dots) and add approvals and add approver as yourself.
+6. Go to Pipelines and create a new pipeline --> Select your repo --> "Existing Azure Pipelines YAML file"--> select `dev` branch and select 'create-infra-pipeline.yaml' under 'deployment\pipelines' folder. This will open a YAML file in pipeline editor.
+7. **IMPORTANT** - Go to 'variables' option availble on top and add new variable 'Environment' with default value as dummy. You will have to change this variable during runtime based on the environment that you plan to create. (e.g. `dev` or `prod`)
+8. The pipeline has 2 stages - Stage 1 -> Validate (terraform Init and Plan) , Stage-2 -> Deploy (terraform apply)
 9. Check all the parameters and you should be able to run the pipeline. You need to approval before "Deploy" stage is triggered
 10. If everything goes well, you should see the new resource group created.
 11. You can check the new .tfstate file stored in tf-state-files container.

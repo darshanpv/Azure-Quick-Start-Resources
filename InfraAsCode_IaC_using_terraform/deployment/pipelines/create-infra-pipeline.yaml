@@ -1,0 +1,113 @@
+trigger:
+  branches:
+    include:
+      - master
+      - dev
+  paths:
+    include:
+      - deployment/terraform
+
+resources:
+- repo: self
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: tf-secrets-vault
+
+stages:
+  - stage: validate
+    displayName: 1_validate
+    jobs:
+      - job: run_init
+        displayName: Terraform init and plan
+        steps:
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+          displayName: 'Terraform install'
+          inputs:
+            terraformVersion: 'latest'
+        
+        - script: az login --service-principal -u $(cicd-tf-spn-client-id) -p $(cicd-tf-spn-secret) --tenant $(cicd-tf-spn-tenenat-id)
+          displayName: 'Log Into Azure'
+
+        - task: CmdLine@2
+          displayName: 'Terraform init'
+          inputs:
+            script: 'terraform init -backend-config="../deploy-env/$(Environment)-backend.conf" -backend-config="access_key=$(tefmstatefilessa-key1)"'
+            workingDirectory: 'deployment/terraform'
+        
+        - task: CmdLine@2
+          displayName: 'Terraform validate'
+          inputs:
+            script: 'terraform validate'
+            workingDirectory: 'deployment/terraform'
+
+        - task: CmdLine@2
+          displayName: 'Terraform plan'
+          inputs:
+            script: 'terraform plan -input=false -out=tfplan -var="deploy_subscription_id=$(deploy-subscription-id)" -var="spn_client_id=$(cicd-tf-spn-client-id))" -var="spn_client_secret=$(cicd-tf-spn-secret)" -var="spn_tenant_id=$(cicd-tf-spn-tenenat-id)" -var-file="../deploy-env/$(Environment).tfvars"'
+            workingDirectory: 'deployment/terraform'
+        
+        - task: ArchiveFiles@2
+          displayName: 'Archive terraform plan files'
+          inputs:
+            rootFolderOrFile: 'deployment'
+            includeRootFolder: true
+            archiveType: 'tar'
+            archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-tfplan.tgz'
+            replaceExistingArchive: true
+        
+        - task: PublishPipelineArtifact@1
+          displayName: 'Publish terraform plan artifact'
+          inputs:
+            targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-tfplan.tgz'
+            artifact: '$(Build.BuildId)-tfplan'
+            publishLocation: 'pipeline'
+
+  - stage: deploy
+    displayName: 2_deploy
+    dependsOn: validate
+    jobs:
+      - deployment: run_deploy
+        displayName: 'Terraform Apply'
+        environment: $(Environment)
+        variables:
+            EnvironementName: $(Environment)
+        strategy:
+            runOnce:
+                deploy:
+                    steps:
+                        - task: DownloadBuildArtifacts@1
+                          displayName: 'Download terraform plan artifact'
+                          inputs:
+                            buildType: 'current'
+                            downloadType: 'single'
+                            artifactName: '$(Build.BuildId)-tfplan'
+                            itemPattern: '**/*.tgz'
+                            downloadPath: '$(System.ArtifactsDirectory)'
+                        
+                        - task: ExtractFiles@1
+                          displayName: 'Extract Terraform plan files'
+                          inputs:
+                            archiveFilePatterns: '$(System.ArtifactsDirectory)/$(Build.BuildId)-tfplan.tgz'
+                            destinationFolder: '$(System.DefaultWorkingDirectory)/'
+                            cleanDestinationFolder: false
+                            overwriteExistingFiles: true
+                        
+                        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+                          displayName: 'Terraform install'
+                          inputs:
+                            terraformVersion: 'latest'
+                            
+                        - task: CmdLine@2
+                          displayName: 'Terraform init'
+                          inputs:
+                            script: 'terraform init -backend-config="../deploy-env/$(Environment)-backend.conf" -backend-config="access_key=$(tefmstatefilessa-key1)"'
+                            workingDirectory: '$(System.DefaultWorkingDirectory)/deployment/terraform'
+                        
+                        - task: CmdLine@2
+                          displayName: 'Terraform apply'
+                          inputs:
+                            script: 'terraform apply -auto-approve -input=false tfplan'
+                            workingDirectory: '$(System.DefaultWorkingDirectory)/deployment/terraform'
