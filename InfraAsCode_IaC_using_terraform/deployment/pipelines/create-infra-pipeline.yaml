@@ -18,10 +18,10 @@ variables:
 
 stages:
   - stage: validate
-    displayName: 1_validate
+    displayName: '1_build and validate'
     jobs:
       - job: run_init
-        displayName: Terraform init and plan
+        displayName: 'Terraform init and plan'
         steps:
         - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
           displayName: 'Terraform install'
@@ -29,7 +29,7 @@ stages:
             terraformVersion: 'latest'
         
         - script: az login --service-principal -u $(cicd-tf-spn-client-id) -p $(cicd-tf-spn-secret) --tenant $(cicd-tf-spn-tenenat-id)
-          displayName: 'Log Into Azure'
+          displayName: 'Login to Azure'
 
         - task: CmdLine@2
           displayName: 'Terraform init'

@@ -1,0 +1,35 @@
+resources:
+- repo: self
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: tf-secrets-vault
+
+stages:
+  - stage: destroy
+    displayName: 'Destroy'
+    jobs:
+      - job: run_init
+        displayName: 'Terraform init and destroy'
+        steps:
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+          displayName: 'Terraform install'
+          inputs:
+            terraformVersion: 'latest'
+        
+        - script: az login --service-principal -u $(cicd-tf-spn-client-id) -p $(cicd-tf-spn-secret) --tenant $(cicd-tf-spn-tenenat-id)
+          displayName: 'Login to Azure'
+
+        - task: CmdLine@2
+          displayName: 'Terraform init'
+          inputs:
+            script: 'terraform init -backend-config="../deploy-env/$(Environment)-backend.conf" -backend-config="access_key=$(tefmstatefilessa-key1)"'
+            workingDirectory: 'deployment/terraform'
+        
+        - task: CmdLine@2
+          displayName: 'Terraform destroy'
+          inputs:
+            script: 'terraform destroy'
+            workingDirectory: 'deployment/terraform'
