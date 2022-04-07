@@ -31,5 +31,5 @@ stages:
         - task: CmdLine@2
           displayName: 'Terraform destroy'
           inputs:
-            script: 'terraform destroy'
+            script: 'terraform destroy -auto-approve -var="deploy_subscription_id=$(deploy-subscription-id)" -var="spn_client_id=$(cicd-tf-spn-client-id))" -var="spn_client_secret=$(cicd-tf-spn-secret)" -var="spn_tenant_id=$(cicd-tf-spn-tenenat-id)" -var-file="../deploy-env/$(Environment).tfvars"'
             workingDirectory: 'deployment/terraform'
