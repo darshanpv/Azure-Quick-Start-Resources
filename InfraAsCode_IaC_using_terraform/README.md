@@ -2,6 +2,10 @@
 
 ## Step by Step - Build and deploy the terrform - Infrastructure as Code (IaC) supporting multiple environments.
 
+This is a terraform template/skeleton for creating the resources as per your specific needs.  
+The required resources being provisioned are added as modules. (e.g. resource group, storage account and databricks)  
+The demo provisions storage account and databricks. The demo also consist of sample notebook (in /notebooks folder) which takes data as input as YYYY-MM-DD and foramts it as an output in YYYY-MM-DD HH:MM:SS (you can see these configured in pipeline as notebook_parameters and notebook_result)  
+
 ### DevOps Project Creation
 
 1. Go to Azure DevOps portal (https://dev.azure.com/) and create the new project.

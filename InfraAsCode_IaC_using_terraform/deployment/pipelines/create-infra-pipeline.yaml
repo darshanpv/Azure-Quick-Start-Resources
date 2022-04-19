@@ -17,8 +17,8 @@ variables:
 - group: tf-secrets-vault
 
 stages:
-  - stage: validate
-    displayName: '1_build and validate'
+  - stage: build
+    displayName: '1-Build'
     jobs:
       - job: run_init
         displayName: 'Terraform init and plan'
@@ -66,8 +66,8 @@ stages:
             publishLocation: 'pipeline'
 
   - stage: deploy
-    displayName: 2_deploy
-    dependsOn: validate
+    displayName: '2-Deploy'
+    dependsOn: build
     jobs:
       - deployment: run_deploy
         displayName: 'Terraform Apply'
@@ -111,3 +111,117 @@ stages:
                           inputs:
                             script: 'terraform apply -auto-approve -input=false tfplan'
                             workingDirectory: '$(System.DefaultWorkingDirectory)/deployment/terraform'
+
+			- task: CmdLine@2
+                          name: terraform_output
+                          displayName: 'Terraform output'
+                          inputs:
+                            script: |
+                              echo "##vso[task.setvariable variable=resource_group_name;isOutput=true]$(terraform output -raw resource_group_name)"
+                              echo "##vso[task.setvariable variable=storage_account_name;isOutput=true]$(terraform output -raw storage_account_name)"
+                              echo "##vso[task.setvariable variable=databricks_host;isOutput=true]$(terraform output -raw databricks_host)"
+                              echo "##vso[task.setvariable variable=databricks_token;isOutput=true]$(terraform output -raw databricks_token)"
+                              echo "##vso[task.setvariable variable=databricks_cluster_id;isOutput=true]$(terraform output -raw databricks_cluster_id)"
+                            workingDirectory: '$(System.DefaultWorkingDirectory)/deployment/terraform'
+                        
+                        - script: |
+                            echo "Show the output variables from terraform output:"
+                            echo $(terraform_output.resource_group_name)
+                            echo $(terraform_output.storage_account_name)
+                            echo $(terraform_output.databricks_host)
+                            echo $(terraform_output.databricks_token)
+                            echo $(terraform_output.databricks_cluster_id)
+                          displayName: 'List output variables'
+
+  - stage: run_databricks_job
+    displayName: '3-Run Databricks Job'
+    dependsOn: deploy
+    jobs:
+      - job: run_databricks
+        displayName: 'Run databricks'
+        variables:
+          python_version: 3.8
+          notebook_path: '/notebooks/'
+          notebook_name: '/notebooks/sample_1'
+          notebook_params: '{"process_datetime": "2020-06-01"}'
+          job_name: 'data_hub_run'
+          res_grp_name: $[stageDependencies.deploy.run_deploy.outputs['run_deploy.terraform_output.resource_group_name']]
+          dbks_host: $[stageDependencies.deploy.run_deploy.outputs['run_deploy.terraform_output.databricks_host']]
+          dbks_token: $[stageDependencies.deploy.run_deploy.outputs['run_deploy.terraform_output.databricks_token']]
+          dbks_cluster_id: $[stageDependencies.deploy.run_deploy.outputs['run_deploy.terraform_output.databricks_cluster_id']]
+        steps:
+          - task: Bash@3
+            displayName: 'Show databricks output variables'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Show values of databricks host & token from deploy stage"
+                echo $(res_grp_name)
+                echo $(dbks_host)
+                echo $(dbks_token)
+                echo $(dbks_cluster_id)
+              workingDirectory: '$(System.DefaultWorkingDirectory)/deployment/terraform'
+          - task: UsePythonVersion@0
+            displayName: 'Set python version to 3.x'
+            inputs:
+              versionSpec: '$(python_version)'
+              addToPath: true
+              architecture: 'x64'
+          - task: CopyFiles@2
+            displayName: 'Copy notebook folder'
+            inputs:
+              SourceFolder: './notebooks'
+              Contents: '**'
+              TargetFolder: '$(System.DefaultWorkingDirectory)/notebooks'
+          
+          - task: CopyFiles@2
+            displayName: 'Copy scripts folder'
+            inputs:
+              SourceFolder: './deployment/scripts'
+              Contents: '**'
+              TargetFolder: '$(System.DefaultWorkingDirectory)/scripts'
+
+          - task: ShellScript@2
+            displayName: 'Install and configure the Databricks CLI'
+            inputs:
+              scriptPath: 'scripts/databricks_cli_config.sh'
+              args: '$(dbks_host) $(dbks_token)'
+              disableAutoCwd: true
+              cwd: '$(System.DefaultWorkingDirectory)'
+          
+          - task: ShellScript@2
+            displayName: 'Import updated notebooks to workspace'
+            inputs:
+              scriptPath: 'scripts/databricks_workspace_import.sh'
+              args: '$(System.DefaultWorkingDirectory)$(notebook_path) "/notebooks"'
+              disableAutoCwd: true
+              cwd: '$(System.DefaultWorkingDirectory)'
+
+          - task: ShellScript@2
+            displayName: 'Create job to run notebook'
+            inputs:
+              scriptPath: 'scripts/databricks_create_job.sh'
+              args: '$(dbks_cluster_id) $(notebook_name) $(job_name)'
+              disableAutoCwd: true
+              cwd: '$(System.DefaultWorkingDirectory)'
+          
+          - task: ShellScript@2
+            displayName: 'Run job on cluster'
+            inputs:
+              scriptPath: 'scripts/databricks_run_job.sh'
+              args: '$(job_id) $(notebook_params)'
+              disableAutoCwd: true
+              cwd: '$(System.DefaultWorkingDirectory)'
+          
+          - task: ShellScript@2
+            displayName: 'Show job status'
+            inputs:
+              scriptPath: 'scripts/databricks_job_status.sh'
+              args: '$(run_id)'
+              disableAutoCwd: true
+              cwd: '$(System.DefaultWorkingDirectory)'
+          
+          - script: |
+              echo "The job has been executed with following result -"
+              echo '$(notebook_result)'
+            displayName: 'Show notebook result'
