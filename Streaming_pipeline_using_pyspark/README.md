@@ -58,7 +58,9 @@ To consume these events, we will use Structured streaming dataframe APIs using p
 
 You can run the notebook and see the real time events being processed.
 
-[IMPORTANT] To be able to run the notebooks, you need to create a dimension table in Databricks.
+[IMPORTANT] To be able to run the notebooks, you need to create a `insurance_types` dimension table in Databricks.
 1. Create the database `events_db`
-2. Create a table `insurance_types` with following data
+2. Create a table `insurance_types` with following data  
+
+
 ![](images/dim_table.png)
