@@ -41,7 +41,7 @@ The events are published by a small python utility that you can run locally on y
 - Set the connection string and event hub name in `main.py` file ( line 29, 30) based on your Azure setup
 
 ##### Running the event publisher ######
-Now you can run any of the below mentioned command to generate the events
+Now you can run any of the below mentioned command to generate the events  
 <b> OPTION -1 </b>
 Run below command and you should be able to send events in multiple batches with each batch having 10 events bundled. (You can configure it as per your neeed)
 ```
